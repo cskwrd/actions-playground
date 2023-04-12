@@ -17,7 +17,29 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - uses: actions/checkout@v3
+      - name: Clone this repository
+        uses: actions/checkout@v3
+
+      - name: Clone stuntman repository
+        uses: actions/checkout@v3
+        with:
+          repository: jselbie/stunserver
+          path: stuntman
+
+      - name: Install stuntman build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ make libboost-dev libssl-dev
+
+      - name: Build stuntman client and server
+        run: |
+          cd stuntman
+          make
+
+      - name: Install stuntman client
+        run: |
+          mkdir -p ~/.local/bin
+          install -t ~/.local/bin stuntman/stunclient
 
       - name: Setup tmate session
         env:
