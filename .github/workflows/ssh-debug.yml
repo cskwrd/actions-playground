@@ -41,6 +41,9 @@ jobs:
           mkdir -p ~/.local/bin
           install -t ~/.local/bin stuntman/stunclient
 
+      - name: Install MQTT tools
+        run: sudo apt-get install -y mosquitto-clients
+
       - name: Setup tmate session
         env:
           GOPATH: ${{ github.workspace }}
