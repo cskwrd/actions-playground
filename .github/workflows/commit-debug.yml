@@ -1,12 +1,12 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Debug runner via SSH
+name: Debug git commit via SSH
 
 # Controls when the workflow will run
 on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-  # push:
+  push:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -20,31 +20,11 @@ jobs:
       - name: Clone this repository
         uses: actions/checkout@v3
 
-      - name: Clone stuntman repository
-        uses: actions/checkout@v3
-        with:
-          repository: jselbie/stunserver
-          path: stuntman
-
-      - name: Install stuntman build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y g++ make libboost-dev libssl-dev
-
-      - name: Build stuntman client and server
-        run: |
-          cd stuntman
-          make
-
-      - name: Install stuntman client
-        run: |
-          mkdir -p ~/.local/bin
-          install -t ~/.local/bin stuntman/stunclient
-
-      - name: Install MQTT tools
-        run: sudo apt-get install -y mosquitto-clients
-
       - name: Setup tmate session
         env:
           GOPATH: ${{ github.workspace }}
+          THE_EVENT_NAME: ${{ github.event_name }}
+          THE_EVENT_PATH: ${{ github.event_path }}
+          THE_EVENT_BEFORE: ${{ github.event.before }}
+          THE_EVENT_AFTER: ${{ github.event.after }}
         uses: mxschmitt/action-tmate@v3
