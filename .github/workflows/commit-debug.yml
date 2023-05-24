@@ -34,12 +34,14 @@ jobs:
             echo "There are more than 1 commits, pulling more history..."
             git fetch --unshallow
           fi
+          git diff --name-only "$THE_EVENT_BEFORE" "$THE_EVENT_AFTER"
           files_changed=$(git diff --name-only "$THE_EVENT_BEFORE" "$THE_EVENT_AFTER")
           for file in $files_changed; do
             absolute_path=$(realpath "${{ github.workspace }}/$file")
             echo "Processing file: $absolute_path"
             # Do something with each file
           done
+          echo "DONE!!!"
           # cd "$GITHUB_WORKSPACE"
           # mkdir -p intermediate
           # mkdir -p output/{html,pdf}
