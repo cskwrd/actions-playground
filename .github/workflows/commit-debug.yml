@@ -19,6 +19,41 @@ jobs:
     steps:
       - name: Clone this repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: '2' # this should solve most issues, if there end up being frequent occasions where this is not enough look at using `git fetch --unshallow` as a backup to pull the re
+
+      - name: Print changed files
+        env:
+          THE_EVENT_PATH: ${{ github.event_path }}
+          THE_EVENT_BEFORE: ${{ github.event.before }}
+          THE_EVENT_AFTER: ${{ github.event.after }}
+        run: |
+          commit_count=$(cat "$THE_EVENT_PATH" | jq '.commits | length')
+          if [ "$commit_count" -gt 1 ]; then
+            # bc there is more than one commit we need to get more history so we can find all of the changed files
+            echo "There are more than 1 commits, pulling more history..."
+            git fetch --unshallow
+          fi
+          files_changed=$(git diff --name-only "$THE_EVENT_BEFORE" "$THE_EVENT_AFTER")
+          for file in $files_changed; do
+            absolute_path=$(realpath "${{ github.workspace }}/$file")
+            echo "Processing file: $absolute_path"
+            # Do something with each file
+          done
+          # cd "$GITHUB_WORKSPACE"
+          # mkdir -p intermediate
+          # mkdir -p output/{html,pdf}
+          # echo -n "$THE_VAULT_PASSWORD" > tvp.txt
+          # for vault_file in data/*; do
+          #   if [[ -f "$vault_file" && "$vault_file" =~ .*\.[Vv][Aa][Uu][Ll][Tt]\..* ]]; then
+          #     fname_no_extension=$(basename "$vault_file" .vault.json)
+          #     ansible-vault decrypt --vault-password-file tvp.txt --output "intermediate/${fname_no_extension}.json" "$vault_file" 2>/dev/null
+          #     resume export --theme ./jsonresume-theme-stackoverflow -f .html --resume "intermediate/${fname_no_extension}.json" "output/html/${fname_no_extension}.html"
+          #     resume export --theme ./jsonresume-theme-stackoverflow -f .pdf --resume "intermediate/${fname_no_extension}.json" "output/pdf/${fname_no_extension}.pdf"
+          #     rm -rf "intermediate/${fname_no_extension}.json"
+          #   fi
+          # done
+          # rm -rf tvp.txt
 
       - name: Setup tmate session
         env:
