@@ -23,7 +23,6 @@ jobs:
           fetch-depth: '2' # setting to 2. this should be the normal case of a single commit per push. further along the job fetches more history as needed
 
       - name: Resolve file paths of changed files
-        id: resolve-changed-paths
         run: |
           echo "### Changed file path resolution" >> $GITHUB_STEP_SUMMARY
 
@@ -40,7 +39,7 @@ jobs:
           changed_file_count=0
           processed_file_count=0
           delim=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "CHANGED_FILES<<$delim" >> "$GITHUB_ENV"
+          echo "FILES_CHANGED<<$delim" >> "$GITHUB_ENV"
           files_changed=$(git diff --name-only "${{ github.event.before }}" "${{ github.event.after }}")
           for file in $files_changed; do
             changed_file_count=$((changed_file_count+1))
@@ -55,7 +54,6 @@ jobs:
 
       - name: Operate on changed files
         env:
-          FILES_CHANGED: ${{ steps.resolve-changed-paths.outputs.CHANGED_FILES }}
           THE_VAULT_PASSWORD: super-secret
         run: |
           for file in $FILES_CHANGED; do
