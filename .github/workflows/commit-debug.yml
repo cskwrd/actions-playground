@@ -50,7 +50,8 @@ jobs:
             fi
           done
           echo "$delim" >> "$GITHUB_ENV"
-          echo "Processed $processed_file_count of $changed_file_count files changed."
+
+          echo "Processed $processed_file_count of $changed_file_count files changed." >> $GITHUB_STEP_SUMMARY
 
       - name: Operate on changed files
         env:
