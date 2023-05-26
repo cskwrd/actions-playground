@@ -25,57 +25,74 @@ jobs:
 
       - name: Initialize Haraka configuration
         run: |
-          haraka -i /tmp/haraka
+          haraka -i ${{ github.workspace }}/haraka
 
           # enable debug logging
-          echo DEBUG > /tmp/haraka/config/loglevel
+          echo DEBUG > ${{ github.workspace }}/haraka/config/loglevel
           
-          # configure haraka to only listen on the loopback interface
-          sed -i 's/;listen=\[::0\]:25/listen=127.1.2.3:2525/' /tmp/haraka/config/smtp.ini
+          # add hosts to host list
+          echo "example.com" >> ${{ github.workspace }}/haraka/config/host_list
 
-          # configure haraka to run in the background
-          sed -i 's/;daemonize=true/daemonize=true/' /tmp/haraka/config/smtp.ini
-          sed -i 's/;daemon_log_file=\/var\/log\/haraka.log/daemon_log_file=\/var\/log\/haraka.log/' /tmp/haraka/config/smtp.ini
-          sed -i 's/;daemon_pid_file=\/var\/run\/haraka.pid/daemon_pid_file=\/var\/run\/haraka.pid/' /tmp/haraka/config/smtp.ini
+          # configure haraka to only listen on the loopback interface
+          sed -i 's/;listen=\[::0\]:25/listen=127.1.2.3:2525/' ${{ github.workspace }}/haraka/config/smtp.ini
 
           # configure plugins
-          ### access
-          #sed -i 's/# access/access/' /tmp/haraka/config/plugins
-          #cat <<ACCESS > /tmp/haraka/config/access.ini
-          #[check]
-          #any=false
-          #conn=false
-          #helo=false
-          #mail=false
-          #rcpt=false
-          #
-          #[rcpt]
-          #accept=false
-          #ACCESS
-
           ## dnsbl
           # do not block mail from bad hosts
-          sed -i 's/dnsbl/# dnsbl/' /tmp/haraka/config/plugins
+          sed -i 's/dnsbl/# dnsbl/' ${{ github.workspace }}/haraka/config/plugins
 
           ## mail_from.is_resolvable
           # allow any address
-          sed -i 's/mail_from.is_resolvable/# mail_from.is_resolvable/' /tmp/haraka/config/plugins
+          sed -i 's/mail_from.is_resolvable/# mail_from.is_resolvable/' ${{ github.workspace }}/haraka/config/plugins
 
-          ## rcpt_to.in_host_list
-          # allow any address
-          sed -i 's/rcpt_to.in_host_list/# rcpt_to.in_host_list/' /tmp/haraka/config/plugins
+          # ## rcpt_to.in_host_list
+          # # allow any address
+          # sed -i 's/rcpt_to.in_host_list/# rcpt_to.in_host_list/' ${{ github.workspace }}/haraka/config/plugins
 
           ## queue/smtp_forward
           # do not forward mail
-          sed -i 's/queue\/smtp_forward/# queue\/smtp_forward/' /tmp/haraka/config/plugins
+          sed -i 's/queue\/smtp_forward/# queue\/smtp_forward/' ${{ github.workspace }}/haraka/config/plugins
 
-          ### queue/quarantine
-          ## quarantine mail
-          #sed -i 's/# queue\/smtp_forward/queue\/quarantine/' /tmp/haraka/config/plugins
+          # ## queue/quarantine
+          # # quarantine mail
+          # sed -i 's/# queue\/smtp_forward/queue\/quarantine/' ${{ github.workspace }}/haraka/config/plugins
 
           ## queue/test
           # save to tmp directory
-          sed -i 's/# queue\/smtp_forward/queue\/test/' /tmp/haraka/config/plugins
+          sed -i 's/# queue\/smtp_forward/queue\/test/' ${{ github.workspace }}/haraka/config/plugins
+
+          # configure systemd service
+          sudo cat <<SVC > /etc/systemd/system/haraka.service
+          #
+          # systemd service file for Haraka
+          #
+          # Ensure that `daemonize` in `smtp.ini` is set to `false` (which is the default value).
+          #
+          # Put this file in /etc/systemd/system,  modify the paths to suit, then run:
+          # sudo systemctl enable haraka
+          # sudo systemctl start haraka
+          #
+
+          [Unit]
+          Description=Haraka MTA
+          After=syslog.target network.target remote-fs.target nss-lookup.target
+
+          [Service]
+          Type=simple
+          PIDFile=/var/run/haraka.pid
+          ExecStart=/usr/local/bin/haraka -c ${{ github.workspace }}/haraka
+          KillMode=process
+          PrivateTmp=true
+
+          [Install]
+          WantedBy=multi-user.target
+          
+          SVC
+
+      - name: Install swaks
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y swaks
 
           #swaks --to rx@example.com --from tx@example.com --server 127.1.2.3 --port 2525 --auth-user <username> --auth-password <password> --tls
 
