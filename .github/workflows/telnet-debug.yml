@@ -2,7 +2,7 @@ name: Debug telnet commands via SSH
 
 on:
   workflow_dispatch:
-  push:
+  # push:
 
 jobs:
   debug:
