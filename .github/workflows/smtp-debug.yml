@@ -27,6 +27,9 @@ jobs:
         run: |
           haraka -i /tmp/haraka
 
+          # enable debug logging
+          echo DEBUG > /tmp/haraka/config/loglevel
+          
           # configure haraka to only listen on the loopback interface
           sed -i 's/;listen=\[::0\]:25/listen=127.1.2.3:2525/' /tmp/haraka/config/smtp.ini
 
@@ -50,6 +53,10 @@ jobs:
           #accept=false
           #ACCESS
 
+          ## dnsbl
+          # do not block mail from bad hosts
+          sed -i 's/dnsbl/# dnsbl/' /tmp/haraka/config/plugins
+
           ## mail_from.is_resolvable
           # allow any address
           sed -i 's/mail_from.is_resolvable/# mail_from.is_resolvable/' /tmp/haraka/config/plugins
@@ -62,9 +69,15 @@ jobs:
           # do not forward mail
           sed -i 's/queue\/smtp_forward/# queue\/smtp_forward/' /tmp/haraka/config/plugins
 
-          ## queue/quarantine
-          # do not forward mail
-          sed -i 's/# queue\/smtp_forward/queue\/quarantine/' /tmp/haraka/config/plugins
+          ### queue/quarantine
+          ## quarantine mail
+          #sed -i 's/# queue\/smtp_forward/queue\/quarantine/' /tmp/haraka/config/plugins
+
+          ## queue/test
+          # save to tmp directory
+          sed -i 's/# queue\/smtp_forward/queue\/test/' /tmp/haraka/config/plugins
+
+          #swaks --to rx@example.com --from tx@example.com --server 127.1.2.3 --port 2525 --auth-user <username> --auth-password <password> --tls
 
       - name: Setup tmate session
         env:
