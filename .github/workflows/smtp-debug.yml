@@ -20,6 +20,52 @@ jobs:
       - name: Clone this repository
         uses: actions/checkout@v3
 
+      - name: Install Haraka
+        run: npm install -g Haraka
+
+      - name: Initialize Haraka configuration
+        run: |
+          haraka -i /tmp/haraka
+
+          # configure haraka to only listen on the loopback interface
+          sed -i 's/;listen=\[::0\]:25/listen=127.1.2.3:2525/' /tmp/haraka/config/smtp.ini
+
+          # configure haraka to run in the background
+          sed -i 's/;daemonize=true/daemonize=true/' /tmp/haraka/config/smtp.ini
+          sed -i 's/;daemon_log_file=\/var\/log\/haraka.log/daemon_log_file=\/var\/log\/haraka.log/' /tmp/haraka/config/smtp.ini
+          sed -i 's/;daemon_pid_file=\/var\/run\/haraka.pid/daemon_pid_file=\/var\/run\/haraka.pid/' /tmp/haraka/config/smtp.ini
+
+          # configure plugins
+          ### access
+          #sed -i 's/# access/access/' /tmp/haraka/config/plugins
+          #cat <<ACCESS > /tmp/haraka/config/access.ini
+          #[check]
+          #any=false
+          #conn=false
+          #helo=false
+          #mail=false
+          #rcpt=false
+          #
+          #[rcpt]
+          #accept=false
+          #ACCESS
+
+          ## mail_from.is_resolvable
+          # allow any address
+          sed -i 's/mail_from.is_resolvable/# mail_from.is_resolvable/' /tmp/haraka/config/plugins
+
+          ## rcpt_to.in_host_list
+          # allow any address
+          sed -i 's/rcpt_to.in_host_list/# rcpt_to.in_host_list/' /tmp/haraka/config/plugins
+
+          ## queue/smtp_forward
+          # do not forward mail
+          sed -i 's/queue\/smtp_forward/# queue\/smtp_forward/' /tmp/haraka/config/plugins
+
+          ## queue/quarantine
+          # do not forward mail
+          sed -i 's/# queue\/smtp_forward/queue\/quarantine/' /tmp/haraka/config/plugins
+
       - name: Setup tmate session
         env:
           THE_EVENT_NAME: ${{ github.event_name }}
