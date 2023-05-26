@@ -62,7 +62,7 @@ jobs:
           sed -i 's/# queue\/smtp_forward/queue\/test/' ${{ github.workspace }}/haraka/config/plugins
 
           # configure systemd service
-          sudo cat <<SVC > /etc/systemd/system/haraka.service
+          cat <<SVC > haraka.service
           #
           # systemd service file for Haraka
           #
@@ -88,6 +88,7 @@ jobs:
           WantedBy=multi-user.target
           
           SVC
+          sudo mv haraka.service /etc/systemd/system/haraka.service
 
       - name: Install swaks
         run: |
