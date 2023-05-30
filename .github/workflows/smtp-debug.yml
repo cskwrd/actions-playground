@@ -33,33 +33,23 @@ jobs:
           # add hosts to host list
           echo "example.com" >> ${{ github.workspace }}/haraka/config/host_list
 
-          # configure haraka to only listen on the loopback interface
-          sed -i 's/;listen=\[::0\]:25/listen=127.1.2.3:2525/' ${{ github.workspace }}/haraka/config/smtp.ini
+          # configure smtp
+          mv ${{ github.workspace }}/haraka/config/smtp.ini ${{ github.workspace }}/haraka/config/smtp.ini.orig
+          cat <<SMTP > ${{ github.workspace }}/haraka/config/smtp.ini
+          listen=127.1.2.3:2525
+          [headers]
+          max_lines=1000
+          max_received=100
+          SMTP
 
           # configure plugins
-          ## dnsbl
-          # do not block mail from bad hosts
-          sed -i 's/dnsbl/# dnsbl/' ${{ github.workspace }}/haraka/config/plugins
-
-          ## mail_from.is_resolvable
-          # allow any address
-          sed -i 's/mail_from.is_resolvable/# mail_from.is_resolvable/' ${{ github.workspace }}/haraka/config/plugins
-
-          # ## rcpt_to.in_host_list
-          # # allow any address
-          # sed -i 's/rcpt_to.in_host_list/# rcpt_to.in_host_list/' ${{ github.workspace }}/haraka/config/plugins
-
-          ## queue/smtp_forward
-          # do not forward mail
-          sed -i 's/queue\/smtp_forward/# queue\/smtp_forward/' ${{ github.workspace }}/haraka/config/plugins
-
-          # ## queue/quarantine
-          # # quarantine mail
-          # sed -i 's/# queue\/smtp_forward/queue\/quarantine/' ${{ github.workspace }}/haraka/config/plugins
-
-          ## queue/test
-          # save to tmp directory
-          sed -i 's/# queue\/smtp_forward/queue\/test/' ${{ github.workspace }}/haraka/config/plugins
+          mv ${{ github.workspace }}/haraka/config/plugins ${{ github.workspace }}/haraka/config/plugins.orig
+          cat <<PLUGINS > ${{ github.workspace }}/haraka/config/plugins
+          helo.checks
+          rcpt_to.in_host_list
+          headers
+          queue/test
+          PLUGINS
 
           # configure systemd service
           cat <<SVC > haraka.service
@@ -82,13 +72,16 @@ jobs:
           PIDFile=/var/run/haraka.pid
           ExecStart=/usr/local/bin/haraka -c ${{ github.workspace }}/haraka
           KillMode=process
-          PrivateTmp=true
+          PrivateTmp=True
 
           [Install]
           WantedBy=multi-user.target
           
           SVC
           sudo mv haraka.service /etc/systemd/system/haraka.service
+
+      - name: Start Haraka
+        run: sudo systemctl start haraka
 
       - name: Install swaks
         run: |
